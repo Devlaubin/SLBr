@@ -1,4 +1,4 @@
-﻿/*Copyright © SLT Softwares. All rights reserved.
+﻿/*Copyright © Devlaubin. All rights reserved.
 Use of this source code is governed by a GNU license that can be found in the LICENSE file.*/
 
 using CefSharp;
@@ -1860,7 +1860,7 @@ namespace SLBr
                                 ApplicationRegistry.SetValue("AppUserModelId", "SLBr");
                                 ApplicationRegistry.SetValue("ApplicationIcon", $"{ExecutablePath},0");
                                 ApplicationRegistry.SetValue("ApplicationName", "SLBr");
-                                ApplicationRegistry.SetValue("ApplicationCompany", "SLT Softwares");
+                                ApplicationRegistry.SetValue("ApplicationCompany", "Devlaubin");
                                 ApplicationRegistry.SetValue("ApplicationDescription", "Browse the web with a fast, lightweight web browser.");
                                 ApplicationRegistry.Close();
 
@@ -2183,7 +2183,7 @@ $Toast = [Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, 
                 return;
             try
             {
-                using HttpRequestMessage Request = new(HttpMethod.Get, "https://api.github.com/repos/slt-world/slbr/releases/latest");
+                using HttpRequestMessage Request = new(HttpMethod.Get, "https://api.github.com/repos/Devlaubin/slbr/releases/latest");
                 Request.Headers.UserAgent.ParseAdd(UserAgentGenerator.BuildChromeBrand());
                 Request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
                 using var Response = await MiniHttpClient.SendAsync(Request);

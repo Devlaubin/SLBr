@@ -1,4 +1,4 @@
-﻿/*Copyright © SLT Softwares. All rights reserved.
+﻿/*Copyright © Devlaubin. All rights reserved.
 Use of this source code is governed by a GNU license that can be found in the LICENSE file.*/
 
 using System.Windows.Controls;

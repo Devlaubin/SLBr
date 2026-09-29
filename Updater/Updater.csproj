@@ -10,7 +10,7 @@
 	<OptimizationPreference>Size</OptimizationPreference>
     <InvariantGlobalization>true</InvariantGlobalization>
     <SignAssembly>False</SignAssembly>
-    <Copyright>Copyright (c) SLT Softwares. All rights reserved.</Copyright>
+    <Copyright>Copyright (c) Devlaubin. All rights reserved.</Copyright>
     <Company>$(Authors)</Company>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>

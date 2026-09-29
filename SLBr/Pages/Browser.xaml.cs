@@ -1,4 +1,4 @@
-﻿/*Copyright © SLT Softwares. All rights reserved.
+﻿/*Copyright © Devlaubin. All rights reserved.
 Use of this source code is governed by a GNU license that can be found in the LICENSE file.*/
 
 using CefSharp;
@@ -812,7 +812,7 @@ namespace SLBr.Pages
             }
 
             //Proof of concept.
-            //https://github.com/users/SLT-World/projects/2/views/2?pane=issue&itemId=159222997
+            //https://github.com/users/Devlaubin/projects/2/views/2?pane=issue&itemId=159222997
             //TODO: Inject styling, refer to SLChat markdown implementation.
             //if (e.Url.Contains("developers.cloudflare.com/fundamentals/reference/markdown-for-agents"))
             //{
