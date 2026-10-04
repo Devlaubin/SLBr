@@ -2157,6 +2157,7 @@ $Toast = [Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, 
         }
 
         public string UpdateAvailable = string.Empty;
+        public string UpdateDownloadUrl = string.Empty;
 
         public void ContinueBackgroundInitialization()
         {
@@ -2177,6 +2178,25 @@ $Toast = [Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, 
             }
         }
 
+        private static bool TryParseReleaseVersion(string Value, out Version ParsedVersion)
+        {
+            ParsedVersion = new Version();
+            if (string.IsNullOrWhiteSpace(Value))
+                return false;
+
+            string NormalizedValue = Value.Trim();
+            if (NormalizedValue.StartsWith('v') || NormalizedValue.StartsWith('V'))
+                NormalizedValue = NormalizedValue[1..];
+
+            if (Version.TryParse(NormalizedValue, out ParsedVersion))
+                return true;
+
+            if (NormalizedValue.Contains('-'))
+                NormalizedValue = NormalizedValue.Split('-')[0];
+
+            return Version.TryParse(NormalizedValue, out ParsedVersion);
+        }
+
         public async Task CheckUpdate()
         {
             if (!string.IsNullOrEmpty(UpdateAvailable))
@@ -2190,24 +2210,58 @@ $Toast = [Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, 
                 Response.EnsureSuccessStatusCode();
                 string Data = await Response.Content.ReadAsStringAsync();
                 using JsonDocument Document = JsonDocument.Parse(Data);
+
                 string NewVersion = Document.RootElement.GetProperty("tag_name").ToString();
-                if (!NewVersion.StartsWith(ReleaseVersion))
+                if (!TryParseReleaseVersion(NewVersion, out Version ParsedNewVersion) ||
+                    !TryParseReleaseVersion(ReleaseVersion, out Version ParsedReleaseVersion) ||
+                    ParsedNewVersion <= ParsedReleaseVersion)
                 {
-                    UpdateAvailable = NewVersion;
-                    foreach (MainWindow _Window in AllWindows)
+                    UpdateAvailable = ReleaseVersion;
+                    UpdateDownloadUrl = string.Empty;
+                    return;
+                }
+
+                string? ReleaseDownloadUrl = null;
+                if (Document.RootElement.TryGetProperty("assets", out JsonElement Assets) && Assets.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (JsonElement Asset in Assets.EnumerateArray())
                     {
-                        foreach (Browser _Browser in _Window.Tabs.Select(i => i.Content).Where(i => i != null))
+                        string AssetName = Asset.TryGetProperty("name", out JsonElement AssetNameElement) ? AssetNameElement.GetString() ?? string.Empty : string.Empty;
+                        if (string.Equals(AssetName, "SLBr.zip", StringComparison.OrdinalIgnoreCase))
                         {
-                            _Browser.NewUpdateMenu.Visibility = Visibility.Visible;
-                            _Browser.NewUpdateMenuSeparator.Visibility = Visibility.Visible;
+                            ReleaseDownloadUrl = Asset.TryGetProperty("browser_download_url", out JsonElement AssetUrlElement) ? AssetUrlElement.GetString() : null;
+                            break;
                         }
                     }
-                    ShowUpdateInfoBar();
                 }
-                else
+
+                if (string.IsNullOrWhiteSpace(ReleaseDownloadUrl))
+                {
                     UpdateAvailable = ReleaseVersion;
+                    UpdateDownloadUrl = string.Empty;
+                    return;
+                }
+
+                UpdateAvailable = NewVersion;
+                UpdateDownloadUrl = ReleaseDownloadUrl;
+                foreach (MainWindow _Window in AllWindows)
+                {
+                    foreach (Browser _Browser in _Window.Tabs.Select(i => i.Content).Where(i => i != null))
+                    {
+                        _Browser.NewUpdateMenu.Visibility = Visibility.Visible;
+                        _Browser.NewUpdateMenuSeparator.Visibility = Visibility.Visible;
+                    }
+                }
+                ShowUpdateInfoBar();
             }
-            catch { }
+            catch (Exception Error)
+            {
+                UpdateAvailable = ReleaseVersion;
+                UpdateDownloadUrl = string.Empty;
+#if DEBUG
+                ReportError(Error);
+#endif
+            }
         }
 
         public void ShowUpdateInfoBar()
@@ -2242,10 +2296,17 @@ $Toast = [Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, 
                 File.Delete(TemporaryUpdater);
             File.Copy(Path.Combine(AppDirectory, "Updater.exe"), TemporaryUpdater, true);
 
+            string Arguments = AppDirectory.Contains(' ') ? $"\"{AppDirectory}\"" : AppDirectory;
+            if (!string.IsNullOrWhiteSpace(UpdateDownloadUrl))
+            {
+                string DownloadUrl = UpdateDownloadUrl.Contains(' ') ? $"\"{UpdateDownloadUrl}\"" : UpdateDownloadUrl;
+                Arguments = $"{Arguments} {DownloadUrl}";
+            }
+
             Process.Start(new ProcessStartInfo
             {
                 FileName = TemporaryUpdater,
-                Arguments = AppDirectory.Contains(' ') ? $"\"{AppDirectory}\"" : AppDirectory,
+                Arguments = Arguments,
                 UseShellExecute = false
             });
 

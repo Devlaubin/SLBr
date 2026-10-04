@@ -79,11 +79,17 @@ namespace Updater
         {
             DisableQuickEdit();
             string ApplicationDirectory = args.Length > 0 ? args[0] : AppDomain.CurrentDomain.BaseDirectory;
+            string DownloadUrl = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1])
+                ? args[1]
+                : "https://github.com/Devlaubin/SLBr/releases/latest/download/SLBr.zip";
             string TemporaryZip = Path.Combine(Path.GetTempPath(), "SLBrUpdate.zip");
             string ExtractDirectory = Path.Combine(Path.GetTempPath(), "SLBrUpdate_Extract");
 
             try
             {
+                if (!Directory.Exists(ApplicationDirectory))
+                    throw new DirectoryNotFoundException($"Application directory does not exist: {ApplicationDirectory}");
+
                 Console.WriteLine("Killing SLBr processes...");
                 foreach (Process _Process in Process.GetProcessesByName("SLBr"))
                 {
@@ -95,7 +101,7 @@ namespace Updater
                     catch { }
                 }
 
-                Console.WriteLine("Downloading new update...");
+                Console.WriteLine($"Downloading new update from: {DownloadUrl}");
 
                 if (File.Exists(TemporaryZip))
                     File.Delete(TemporaryZip);
@@ -117,7 +123,7 @@ namespace Updater
                     Client.Timeout = TimeSpan.FromMinutes(15);
                     Client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36");
 
-                    using (HttpResponseMessage Response = await Client.GetAsync("https://github.com/Devlaubin/SLBr/releases/latest/download/SLBr.zip", HttpCompletionOption.ResponseHeadersRead))
+                    using (HttpResponseMessage Response = await Client.GetAsync(DownloadUrl, HttpCompletionOption.ResponseHeadersRead))
                     {
                         Response.EnsureSuccessStatusCode();
 
@@ -151,6 +157,9 @@ namespace Updater
                         Console.WriteLine();
                     }
                 }
+
+                if (!File.Exists(TemporaryZip) || new FileInfo(TemporaryZip).Length == 0)
+                    throw new InvalidOperationException("The update package was not downloaded successfully.");
 
                 Console.WriteLine("Extracting update...");
                 if (Directory.Exists(ExtractDirectory))
